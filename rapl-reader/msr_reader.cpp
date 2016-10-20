@@ -68,6 +68,7 @@ void MSRReader::readEnergyData(){
 		throw MSRException(mCoreId, errno, __FILE__, __LINE__);
 	}
 	currEnergy->pkg = MSRReader::sEnergyUnits * (double)mTmp;
+
 	if ( pread(mFd, &mTmp, sizeof(mTmp), MSR_PP0_ENERGY_STATUS)  != sizeof(mTmp)) {
 		throw MSRException(mCoreId, errno, __FILE__, __LINE__);
 	};

@@ -14,8 +14,8 @@ struct RAPLSetting {
 public:
 	long	sample_interval_in_useconds;
 	string 	log_filename;
-	int		*cores_sampled;
-	int		num_cores_sampled;
+	int	*cores_sampled;
+	int	num_cores_sampled;
 public:
 	RAPLSetting();
 	void initFromArguments(int argc, char*argv[]);

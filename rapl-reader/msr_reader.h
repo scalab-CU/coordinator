@@ -122,7 +122,7 @@ protected:
 	static double 	sPowerUnits;
 	static double 	sEnergyUnits;
 	static double 	sTimeUnits;
-	static bool		sInitialized;
+	static bool	sInitialized;
 };
 
 class MSRReaderSet {
@@ -139,8 +139,8 @@ public:
 private:
 	MSRReaderSet(){};
 protected:
-	MSRReader		**readers;
-	RAPLSetting 	*config;
+	MSRReader	      **readers;
+	RAPLSetting            *config;
 	ofstream		log;
 	double			prevTime;
 	double			currTime;
