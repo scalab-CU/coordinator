@@ -102,18 +102,20 @@ void MSRReader::init() {
 
 void MSRReader::getPkgPowerInfor(PowerInfo& info) {
     MSR_DATA_T msrval =readMSRDate(MSR_PKG_POWER_INFO);
-    info.thermalSpecPower = MSRReader::sEnergyUnits * double(msrval & 0x7ff);
-    info.minPower = MSRReader::sEnergyUnits * double((msrval >> 16) & 0x7ff);
-    info.minPower = MSRReader::sEnergyUnits * double((msrval >> 24) & 0x7ff);
-    info.maxTimeWindows = MSRReader::sEnergyUnits * double((msrval >> 32) & 0xfff);
+    cout << msrval << endl;
+    info.thermalSpecPower = MSRReader::sPowerUnits * (double)(msrval & 0x7ff);
+    info.minPower = MSRReader::sPowerUnits * (double)((msrval >> 16) & 0x7ff);
+    info.minPower = MSRReader::sPowerUnits * (double)((msrval >> 24) & 0x7ff);
+    info.maxTimeWindows = MSRReader::sTimeUnits * (double)((msrval >> 32) & 0xfff);
 }
 
 void MSRReader::getDramPowerInfor(PowerInfo& info) {
     MSR_DATA_T msrval =readMSRDate(MSR_DRAM_POWER_INFO);
-    info.thermalSpecPower = MSRReader::sEnergyUnits * double(msrval & 0x7ff);
-    info.minPower = MSRReader::sEnergyUnits * double((msrval >> 16) & 0x7ff);
-    info.minPower = MSRReader::sEnergyUnits * double((msrval >> 24) & 0x7ff);
-    info.maxTimeWindows = MSRReader::sEnergyUnits * double((msrval >> 32) & 0xfff);
+    cout << msrval << endl;
+    info.thermalSpecPower = MSRReader::sPowerUnits * (double)(msrval & 0x7ff);
+    info.minPower = MSRReader::sPowerUnits * (double)((msrval >> 16) & 0x7ff);
+    info.minPower = MSRReader::sPowerUnits * (double)((msrval >> 24) & 0x7ff);
+    info.maxTimeWindows = MSRReader::sTimeUnits * (double)((msrval >> 32) & 0xfff);
 }
 
 MSRReaderSet::MSRReaderSet(RAPLSetting* setting) {

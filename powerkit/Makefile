@@ -1,5 +1,5 @@
 target = powerkit
-objects = main.o msr_reader.o setting.o
+objects = main.o msr_reader.o setting.o sysinfo.o
 
 powerkit: $(objects)
 	g++ -O2 $(objects) -o $@
