@@ -34,7 +34,7 @@ class TreeNode(object):
     def __str__(self):
         return self.toString(0)
     
-    def getLastNodeAtLevl(self, level):
+    def getLastNodeAtLevel(self, level):
         node = self
         l = 0
         while l < level:
@@ -45,19 +45,21 @@ class TreeNode(object):
                 break
             l = l + 1
         return node
-        
-if __name__ == "__main__":
-    t = TreeNode('Machine', 0)
-    t.addChild(TreeNode('NumaNode', 0))
-    t.addChild(TreeNode('NumaNode', 1))
     
-    print(t)
+    def buildTagMapHelper(self, m):
+        tags = self.tag.split(',')
+        for tag in tags:
+            if tag in m:
+                lst = m[tag]
+                lst.append(self)
+            else:
+                lst = [self]
+                m[tag] = lst
+        for c in self.children:
+            c.buildTagMapHelper(m)
     
-    node = t.getLastNodeAtLevl(0)
-    print(node)
+    def buildTagMap(self):
+        m = {}
+        self.buildTagMapHelper(m)
+        return m
     
-    node = t.getLastNodeAtLevl(1)
-    print(node)
-    
-    node = t.getLastNodeAtLevl(2)
-    print(node)
