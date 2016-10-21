@@ -20,18 +20,18 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-    
+
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
             int coreID = atoi(argv[i]);
             MSRReader msr(coreID);
             PowerInfo pkgPowerInfo, dramPowerInfo;
-    
+
             msr.getPkgPowerInfor(pkgPowerInfo);
             msr.getDramPowerInfor(dramPowerInfo);
-            
-            cout << "PKG_POWER_INFO:" << pkgPowerInfo.maxPower << ' ' << pkgPowerInfo.maxPower << endl;
-            cout << "DRAM_POWER_INFO:" << dramPowerInfo.maxPower << ' ' << dramPowerInfo.maxPower << endl;
+
+            cout << "PKG_POWER_INFO: " << pkgPowerInfo.minPower << ' ' << pkgPowerInfo.maxPower << ' ' << pkgPowerInfo.thermalSpecPower << endl;
+            cout << "DRAM_POWER_INFO: " << dramPowerInfo.minPower << ' ' << dramPowerInfo.maxPower << ' ' << dramPowerInfo.thermalSpecPower << endl;
         }
     }
 }

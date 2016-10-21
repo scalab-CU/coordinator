@@ -12,6 +12,7 @@ void show_usage(const char *prog);
 
 struct RAPLSetting {
 public:
+        bool    output_to_console;
 	long	sample_interval_in_useconds;
 	string 	log_filename;
 	int	*cores_sampled;

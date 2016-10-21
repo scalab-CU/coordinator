@@ -15,10 +15,11 @@ void show_usage(char *prog) {
 
 RAPLSetting::RAPLSetting() {
 	sample_interval_in_useconds = 1 * USECOND_PER_SECOND;
-	log_filename				= DEFAULT_LOG_FILENAME;
-	num_cores_sampled			= 1;
-	cores_sampled				= new int[num_cores_sampled];
-	cores_sampled[0]			= 0;
+        output_to_console           = true;
+	log_filename	            = DEFAULT_LOG_FILENAME;
+	num_cores_sampled	    = 1;
+	cores_sampled		    = new int[num_cores_sampled];
+	cores_sampled[0]	    = 0;
 }
 
 RAPLSetting::~RAPLSetting(){
@@ -63,6 +64,7 @@ void RAPLSetting::initFromArguments(int argc, char*argv[]) {
 		switch (option) {
 		case 'f':
 			log_filename = optarg;
+                        output_to_console = false;
 			break;
 		case 's':
 			sample_interval_in_useconds = long (atof(optarg) * USECOND_PER_SECOND);
