@@ -97,6 +97,7 @@ void MSRReader::init() {
 		sPowerUnits = pow(0.5, (double) (result & 0xf));
 		sEnergyUnits = pow(0.5, (double) ((result >> 8) & 0x1f));
 		sTimeUnits = pow(0.5, (double) ((result >> 16) & 0xf));
+                cout << sPowerUnits << ',' << sEnergyUnits << ',' << sTimeUnits << endl;
 	}
 }
 
