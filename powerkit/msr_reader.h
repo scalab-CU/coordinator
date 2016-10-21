@@ -65,9 +65,9 @@ typedef struct {
 } MSRData;
 
 typedef struct {
-    double maxPower;
-    double minPower;
     double thermalSpecPower;
+    double minPower;
+    double maxPower;
     double maxTimeWindows;
 } PowerInfo;
 
@@ -95,7 +95,7 @@ public:
 	~MSRReader();
 	void print();
 	int getCoreId() { return mCoreId; }
-        
+
         void getPkgPowerInfor(PowerInfo& info);
         void getDramPowerInfor(PowerInfo& info);
 
