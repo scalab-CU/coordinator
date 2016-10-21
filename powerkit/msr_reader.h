@@ -55,7 +55,7 @@ using namespace std;
 
 #define	MAX_MSR_FILENAME_LEN		128
 
-typedef long long	MSR_DATA_T;
+typedef long long                       MSR_DATA_T;
 typedef struct {
 	double pkg;
 	double pp0;

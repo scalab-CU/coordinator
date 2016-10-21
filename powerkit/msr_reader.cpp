@@ -54,10 +54,11 @@ MSRReader::~MSRReader(){
 }
 
 MSR_DATA_T MSRReader::readMSRDate(int which){
-	  if ( pread(mFd, &mTmp, sizeof(mTmp), which) != sizeof(mTmp)) {
+    MSR_DATA_T data;
+	  if ( pread(mFd, &data, sizeof(data), which) != sizeof(data)) {
 		  throw MSRException(mCoreId, errno, __FILE__, __LINE__);
 	  }
-	  return (MSR_DATA_T)mTmp;
+	  return (MSR_DATA_T)data;
 }
 
 void MSRReader::readEnergyData(){
