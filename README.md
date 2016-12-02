@@ -1,4 +1,4 @@
-# README #
+## README ##
 
 This repository contains the source code for power-bounded coordination project.
 
