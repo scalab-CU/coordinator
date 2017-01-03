@@ -1,0 +1,10 @@
+{
+	"wms": "torque",
+	"hostname": "n01",
+	"num_cores": "24",
+	"power_allocation": {
+		"cpu": "120",
+		"mem": "60"
+	},
+	"affinity": "consolidated" 
+}

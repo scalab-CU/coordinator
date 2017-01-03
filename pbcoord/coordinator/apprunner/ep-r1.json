@@ -1,8 +1,0 @@
-{
-	"program_model": "omp",
-	"num_threads": "8",
-	"power_allocation": {
-		"cpu": "120",
-		"mem": "60"
-	}
-}
