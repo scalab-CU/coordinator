@@ -1141,7 +1141,7 @@ get_pp0_accumulated_throttled_time(uint64_t  node,
  * \return 0 on success, -1 otherwise
  */
 int
-set_pp0_rapl_power_limit_control(uint64_t                        node,
+set_pp0_rapl_power_limit_control(uint64_t node,
                                  pp0_rapl_power_limit_control_t *pp0_obj)
 {
     uint64_t cpu = pp0_node_to_cpu(node);

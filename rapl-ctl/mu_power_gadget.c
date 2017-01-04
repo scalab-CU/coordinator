@@ -517,17 +517,17 @@ void do_limit_pp0_power() {
 	uint64_t node = 0;
 	int ret = -1;
 
-	pkg_rapl_power_limit_control_t pp0_obj;
+	pp0_rapl_power_limit_control_t pp0_obj;
 
 	if (pp0_power_limit == -1) { // disable power limit
-		pp0_obj.power_limit_watts_1 = 0; // dummy
-		pp0_obj.limit_enabled_1 = 0;
-		pp0_obj.clamp_enabled_1 = 0;
+		pp0_obj.power_limit_watts = 0; // dummy
+		pp0_obj.limit_enabled = 0;
+		pp0_obj.clamp_enabled = 0;
 		pp0_obj.lock_enabled = 0;
 	} else {
-		pp0_obj.power_limit_watts_1 = pp0_power_limit;
-		pp0_obj.limit_enabled_1 = 1;
-		pp0_obj.clamp_enabled_1 = 1;
+		pp0_obj.power_limit_watts = pp0_power_limit;
+		pp0_obj.limit_enabled = 1;
+		pp0_obj.clamp_enabled = 1;
 		pp0_obj.lock_enabled = 0; // not enabling lock for now. disabling lock requires system reboot
 	}
 
