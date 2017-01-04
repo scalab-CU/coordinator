@@ -24,25 +24,26 @@ def showPowerLimits(limits, prefix):
 
 rapl_cmd = "/usr/local/bin/mu_power_gadget"
 def setPowerLimits(pkg_power_limits, dram_power_limits):
-    cmds = [rapl_cmd]
+    cmds = []
     
     for k in sorted(dram_power_limits.keys()):
         if k == 0:
-            cmds.extend(["-0", str(dram_power_limits[k])])
+            cmds.append([rapl_cmd, "-0", str(dram_power_limits[k])])
         elif k == 1:
-            cmds.extend(["-1", str(dram_power_limits[k])])
+            cmds.append([rapl_cmd, "-1", str(dram_power_limits[k])])
         else:
             print("incorrect DRAM package index {} (must be 0 or 1)".format(k))
     
     for k in sorted(pkg_power_limits.keys()):
         if k == 0:
-            cmds.extend(["-2", str(pkg_power_limits[k])])
+            cmds.append([rapl_cmd, "-2", str(pkg_power_limits[k])])
         elif k == 1:
-            cmds.extend(["-3", str(pkg_power_limits[k])])
+            cmds.append([rapl_cmd, "-3", str(pkg_power_limits[k])])
         else:
             print("incorrect CPU package index {} (must be 0 or 1)".format(k))
     
-    subprocess.call(cmds)
+    for cmd in cmds:
+        subprocess.call(cmds)
         
     
 if __name__ == '__main__':
