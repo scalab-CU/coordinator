@@ -43,7 +43,7 @@ def setPowerLimits(pkg_power_limits, dram_power_limits):
             print("incorrect CPU package index {} (must be 0 or 1)".format(k))
     
     for cmd in cmds:
-        subprocess.call(cmds)
+        subprocess.call(cmd)
         
     
 if __name__ == '__main__':
