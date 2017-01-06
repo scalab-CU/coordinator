@@ -1,5 +1,6 @@
 {
 	"app": "ep",
 	"psize": "A",
-	"path": "/home/rge/software-benchmarks/NPB3.3/NPB3.3-OMP/bin/ep.A"
+	"path": "/home/rge/software-benchmarks/NPB3.3/NPB3.3-OMP/bin/ep.A",
+	"program_model": "omp"
 }
