@@ -9,11 +9,7 @@ from functools import reduce
 import json
 import datetime
 
-# Number of Processors
-N = 48  # $ nproc
-# Number of cores per processor
-M = 12  # $ grep cores /proc/cpuinfo
-# Affinity map, true if that core is active
+# Affinity map, 1 if that core is active, 0 otherwise
 a = [[0 for m in range(M)] for n in range(N)]
 # Power distribution vector
 d = dict()
@@ -21,8 +17,11 @@ d["cpu"] = [[0 for m in range(M)] for k in range(N)]
 d["mem"] = [0 for k in range(N)]
 
 
-def power_budget_is_sufficient(Pb):
-
+def power_budget_is_sufficient(appCfg, Pb):
+    """
+    Determine if there is enough power being supplied to continue with algorithm
+    Pb :: Power Budget
+    """
     if (Pb > P["cpu"][1] + P["mem"][1]):
         # Allocate max memory to all memory nodes
         single_memory_allocation = P["mem"][1] / N
@@ -31,21 +30,30 @@ def power_budget_is_sufficient(Pb):
         read_pivot_config()
 
     elif (Pb > P["cpu"][4] + P["mem"][2]):
-        decide_memory_allocation(Pb)
+        decide_memory_allocation(appCfg, Pb)
 
     if (Pb < P["cpu"][4] + P["mem"][2]):
         # "power budget too low"
         return
 
 
-def decide_memory_allocation(Pb):
+def decide_memory_allocation(appCfg, Pb):
+    """
+    How is the power allocated to the memory?
+    Pb :: Power Budget
+    """
     #if (Pb > P["cpu"][2] + P["mem"][1]):
     single_memory_allocation = P["mem"][1] / N
     d["mem"] = [single_memory_allocation for k in range(N)]
-    decide_memory_allocation(Pb - P["mem"][1])
+    decide_core_allocation(appCfg, Pb - P["mem"][1])
 
 
 def update_indicies(socket_index, core_index):
+    """
+    Utility function to correctly increment indicies for the decide_core_allocation method
+    socket_index :: current socket index
+    core_idex :: current core index
+    """
     core_index += 1
     # Number of cores per processor
     if core_index == M:
@@ -58,8 +66,14 @@ def update_indicies(socket_index, core_index):
     return (socket_index, core_index)
 
 
-def decide_core_allocation(application, Pb):
-    if (application["scalability"] == "high"):
+def decide_core_allocation(appCfg, Pb):
+    """
+    Determine the power allocated to the cores, store the data in the d array
+
+    appCfg :: dict from appRunner, tells us the scalability here
+    Pb :: Power Budget
+    """
+    if (appCfg["scalability"] == "high"):
 
         socket_index = 0
         core_inedx = 0
@@ -79,7 +93,7 @@ def decide_core_allocation(application, Pb):
     # Purposefully not inverting this logic
     #   (loops inside ifs instead of ifs inside loops) for readability and to
     #   more closely follow the paper specification
-    elif (application["scalability"] == "low"):
+    elif (appCfg["scalability"] == "low"):
         # Give max power available to all the activated cores
         for socket_index in range(d["cpu"]):
             for core_index in range(socket_index):
@@ -91,13 +105,16 @@ def decide_core_allocation(application, Pb):
                     Pb -= P["cpu"][4]
     # at this point we know that the application scalability is moderate
     # TODO: this
-    else:
-        return
+    #else:
+    #    return
+    decide_core_affinity(appCfg)
 
 
-def decide_core_affinity():
-
-    if (application["memory_intensity"] == "high"):
+def decide_core_affinity(appCfg):
+    """
+    Edit the core affinity array (a) in accordance to the memory access intensity
+    """
+    if (appCfg["memory_intensity"] == "high"):
         # Decide between high core clustering or more spread out
         a = high_memory_intensity()
     else:
@@ -106,8 +123,11 @@ def decide_core_affinity():
             a[index] = 1
 
 
-# For a computationally intenive application
 def high_memory_intensity():
+    """
+    For a computationally intensive application,
+    take the affinity that produces the faster runtime
+    """
     socket_index = {}
     core_index = {}
     # Genereate our two affinities we want to test
@@ -129,6 +149,11 @@ def high_memory_intensity():
 
 
 def time_process_with_affinity(affinity):
+    """
+    Return the time an application takes to execute with a given core affinity
+    affinity :: Array containing sockets as elements and core activation as elements
+      ex : [[1, 1, 1], [1, 1, 0], [0, 0, 0]] = Three sockets, each with three cores, cores 0-4 are active
+    """
     start_time = time.clock()
     affinity_command = ["taskset", affinity_to_string(affinity)]
     subprocess.call(application_command)
@@ -138,7 +163,13 @@ def time_process_with_affinity(affinity):
 # This is a dumb function, replace with some bit twiddling and convert the
 # affinity array to a primitive int. Then use hex(affinity) to add to the command
 def affinity_to_string(affinity):
-    #flat_list = [y for x in affinity for y in x]
+    """
+    Convert the affinity array to a string to be passed into taskset in time_process_with_affinity
+    affinity :: Affinity array
+
+    returns a string
+      ex : [[1, 1, 1], [1, 1, 0], [0, 0, 0]] = "0x1F"
+    """
     n_str = "0x"
     for n in affinity:
         n = map(lambda x: str(x), n)  # Convert everything to strings
@@ -150,10 +181,18 @@ def affinity_to_string(affinity):
 # (W, SZ, Pb) -> ([a], [d])
 # (program, problem size, power budget) -> ([a], [d])
 def recommend_configuration(appCfg, rscCfg):
+    """
+    Suggest a configuration to run the application in.
+
+    appCfg :: dict object from the apprunner section, specifies application information
+    rscCfg :: dict object from the apprunner section, specifies resource information
+
+    returns a pair (a, d) representing the core affinity and power distribution of the configuration
+    """
     # Kick off the algorithm from step one from the paper
     Pb = rscCfg["power_allocation"]["cpu"]["total"] + \
          rscCfg["power_allocation"]["mem"]["total"]
 
-    power_budget_is_sufficient(Pb)
+    power_budget_is_sufficient(appCfg, Pb)
     # The fall-through of all the methods load up a and d
     return (a, d)

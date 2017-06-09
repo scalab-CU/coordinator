@@ -12,7 +12,7 @@ Created 5 June, 2017
 """
 
 import configTrainer
-import os
+import json
 
 
 def problem_is_known(appCfg, rscCfg):
