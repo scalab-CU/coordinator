@@ -3,19 +3,33 @@
 Created on May 31, 2017
 
 @author: tsranso
+
+** Summary
+
+Implementation of the configuration trainer outlined in Section V.B. of 
+Application-Aware Power Coordination on Power Bounded NUMA Multicore Systems, Ge et al
+
+Used mostly in conjunction with configSelector in order to recomend a configuration 
+to the user
 '''
 
 from functools import reduce
 import json
 import datetime
 
+## Global variales yay python scripting
+M = 4 # cores per processor
+N = 2 # number of processors
 # Affinity map, 1 if that core is active, 0 otherwise
 a = [[0 for m in range(M)] for n in range(N)]
 # Power distribution vector
 d = dict()
-d["cpu"] = [[0 for m in range(M)] for k in range(N)]
-d["mem"] = [0 for k in range(N)]
-
+d["cpu"] = [[0 for m in range(M)] for n in range(N)]
+d["mem"] =  [0 for n in range(N)]
+# Critical power levels, filled in by script
+P = dict()
+P["cpu"] = [0, 0, 0, 0]
+P["mem"] = [0, 0]
 
 def power_budget_is_sufficient(appCfg, Pb):
     """
@@ -28,13 +42,15 @@ def power_budget_is_sufficient(appCfg, Pb):
         d["mem"] = [single_memory_allocation for k in range(N)]
         # Set thread concurrency and affinity from pivot execution configuration
         read_pivot_config()
+        return True
 
     elif (Pb > P["cpu"][4] + P["mem"][2]):
         decide_memory_allocation(appCfg, Pb)
+        return True
 
     if (Pb < P["cpu"][4] + P["mem"][2]):
         # "power budget too low"
-        return
+        return False
 
 
 def decide_memory_allocation(appCfg, Pb):

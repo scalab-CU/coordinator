@@ -14,19 +14,20 @@ Created 5 June, 2017
 import configTrainer
 import json
 
-
 def problem_is_known(appCfg, rscCfg):
     """
     Determines if the problem exists in the kbase.
     appCfg :: dict object from the appRunner, describes application configuration
     rscCfg :: dict from the appRunner, describes resource configuration
     """
-    path = get_config_path(appCfg, rscCfg)
-    with open(path, r) as config_file:
+    path = get_config_path(appCfg)
+    if path is None:
+        raise Exception('Kbase not found', '')
+        return False # Bonk out if there is no kbase file
+    with open(path, 'r') as config_file:
         kbase = json.loads(config_file.read())
-        return appCfg['app'] in kbase and appCfg['psize'] in kbase[appCfg[
-            'app']]
-    return false  # the open failed, so there isn't even a file to read
+        return appCfg['app'] in kbase and appCfg['psize'] in kbase[appCfg['app']]
+    return false  # just default to false for safety
 
 
 def write_to_config_file(appCfg, rscCfg, a, d):
@@ -35,7 +36,7 @@ def write_to_config_file(appCfg, rscCfg, a, d):
     a :: affinity map from configTrainer
     d :: power distribution, also from configTrainer
     """
-    path = get_config_path(appCfg, rscCfg)
+    path = get_config_path(appCfg)
     with open(path, 'rw') as config_file:
         config = {'a': a, 'd': d}
         kbase = json.loads(config_file.read())
@@ -57,7 +58,7 @@ def get_workload_configuration(appCfg, rscCfg):
     Pulls the configuration out of the kbase, 
     only use after verifying the data exists
     """
-    path = get_config_path(appCfg, rscCfg)
+    path = get_config_path(appCfg)
 
     with open(path, 'r') as config_file:
         json_data = json.loads(config_file.read())
@@ -65,11 +66,14 @@ def get_workload_configuration(appCfg, rscCfg):
         return (data['a'], data['d'])
 
 
-def get_config_path(appCfg, rscCfg):
+def get_config_path(appCfg):
     """
     Arbitrary choice here, I think the hostname will provide the
     smallest number of files to store our knowledge base
-    """
+    """x
+    if appCfg is None or not 'hostname' in appCfg:
+        raise Exception('kbase file not found', 'invalid appCfg:{}'.format(appCfg))
+        return None
     return 'kbase/{}.json'.format(appCfg['hostname'])
 
 
