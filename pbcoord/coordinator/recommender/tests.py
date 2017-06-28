@@ -6,6 +6,7 @@ Small testing file to demonstrate the config trainer and selector
 '''
 
 from configSelector import *
+import configTrainer
 import unittest
 import json
 
@@ -38,10 +39,24 @@ class TestTrainerMethods(unittest.TestCase):
         appCfg = json.loads(app_file.read())
         app_file.close()
 
-        self.assertFalse(power_budget_is_sufficient(appCfg, 10))
-        self.assertFalse(power_budget_is_sufficient(appCfg, -10))
-        self.assertTrue(power_budget_is_sufficient(appCfg, 1000))
+        self.assertFalse(power_budget_is_sufficient(appCfg,   10))
+        self.assertFalse(power_budget_is_sufficient(appCfg,  -10))
+        self.assertTrue( power_budget_is_sufficient(appCfg, 1000))
 
+    def test_decide_memory_allocation(self):
+        app_file = open('../apprunner/resource1.json', 'r')
+        appCfg = json.loads(app_file.read())
+        app_file.close()
+
+        self.assertTrue(False)
+
+    def test_affinity_to_string(self):
+
+        affinity = [[1, 1, 1], [1, 1, 0], [0, 0, 0]]
+        self.assertEquals(affinity_to_string(affinity), "0b111110000")
+        affinity = [[0, 0, 0], [0, 1, 1], [1, 1, 1]]
+        self.assertEquals(affinity_to_string(affinity), "0b000011111")
+        self.assertEquals(affinity_to_string([], "0b0")
         
 if __name__ == '__main__':
     

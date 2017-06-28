@@ -70,7 +70,7 @@ def get_config_path(appCfg):
     """
     Arbitrary choice here, I think the hostname will provide the
     smallest number of files to store our knowledge base
-    """x
+    """
     if appCfg is None or not 'hostname' in appCfg:
         raise Exception('kbase file not found', 'invalid appCfg:{}'.format(appCfg))
         return None

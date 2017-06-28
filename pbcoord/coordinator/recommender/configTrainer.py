@@ -186,14 +186,13 @@ def affinity_to_string(affinity):
     returns a string
       ex : [[1, 1, 1], [1, 1, 0], [0, 0, 0]] = "0x1F"
     """
-    n_str = "0x"
+    n_str = "0b"
     flat_affinity = [item for sublist in l for item in affinity]
     
     for n in flat_affinity:
-        if n == 1:
-            n_str += '1'
-        else:
-            n_str += '0'
+        n_str += n
+    if n_str == "0b":
+        n_str += '0'
     return n_str
 
 
