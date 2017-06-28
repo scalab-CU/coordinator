@@ -46,6 +46,9 @@ def power_budget_is_sufficient(appCfg, Pb):
 
     elif (Pb > P["cpu"][4] + P["mem"][2]):
         decide_memory_allocation(appCfg, Pb)
+        # P["mem"][1] is assigned to memory in every situation, so just chop that right off
+        decide_core_allocation(appCfg, Pb - P["mem"][1])
+        decide_core_affinity(appCfg)
         return True
 
     if (Pb < P["cpu"][4] + P["mem"][2]):
@@ -58,10 +61,11 @@ def decide_memory_allocation(appCfg, Pb):
     How is the power allocated to the memory?
     Pb :: Power Budget
     """
+    # Paper never specifies to allocate anything other than L1 to the memory
     #if (Pb > P["cpu"][2] + P["mem"][1]):
     single_memory_allocation = P["mem"][1] / N
-    d["mem"] = [single_memory_allocation for k in range(N)]
-    decide_core_allocation(appCfg, Pb - P["mem"][1])
+    d["mem"] = [single_memory_allocation for k in range(N)] + [P["mem"][1]]
+    return d["mem"]
 
 
 def update_indicies(socket_index, core_index):
@@ -84,47 +88,42 @@ def update_indicies(socket_index, core_index):
 
 def decide_core_allocation(appCfg, Pb):
     """
-    Determine the power allocated to the cores, store the data in the d array
+    Determine the power allocated to the cores, store the data in the a array
 
     appCfg :: dict from appRunner, tells us the scalability here
     Pb :: Power Budget
     """
+    socket_index = 0
+    core_inedx = 0
+
     if (appCfg["scalability"] == "high"):
 
-        socket_index = 0
-        core_inedx = 0
-        # Give power to as many cores as we can
-        while Pb >= P["cpu"][4]:
-            d["cpu"][socket_index][core_index] = P["cpu"][4]
-            Pb -= P["cpu"][4]
-            (socket_index, core_index) = update_indicies(socket_index,
-                                                         core_index)
-        # and upgrade the power as the budget allows
-        while (Pb >= P["cpu"][3]):
-            d["cpu"][socket_index][core_inedx] = P["cpu"][3]
-            (socket_index, core_inedx) = update_indicies(socket_index,
-                                                         core_inedx)
-            # Because the memory is already set to L3, just take off the difference
-            Pb -= (P["cpu"][3] - P["cpu"][4])
-    # Purposefully not inverting this logic
-    #   (loops inside ifs instead of ifs inside loops) for readability and to
-    #   more closely follow the paper specification
+        while Pb >= (P["cpu"][3] - P["cpu"][4]):
+            # Give power to as many cores as we can
+            if d["cpu"][socket_index][core_index] == 0:
+                d["cpu"][socket_index][core_index] = P["cpu"][4]
+                Pb = Pb - P["cpu"][4]
+            # and upgrade as power is available
+            else:
+                d["cpu"][socket_index][core_index] == P["cpu"][3]
+                Pb = Pb - (P["cpu"][3] - P["cpu"][4])    
+            (socket_index, core_index) = update_indicies(socket_index, core_index)
+            
     elif (appCfg["scalability"] == "low"):
-        # Give max power available to all the activated cores
-        for socket_index in range(d["cpu"]):
-            for core_index in range(socket_index):
-                if (Pb >= P["cpu"][3]):
-                    d["cpu"][socket_index][core_index] = P["cpu"][3]
-                    Pb -= P["cpu"][3]
-                elif (Pb >= P["cpu"][4]):
-                    d["cpu"][socket_index][core_index] = P["cpu"][4]
-                    Pb -= P["cpu"][4]
+
+        while Pb >= P["cpu"][4]:
+            if Pb >= P["cpu"][3]:
+                d["cpu"][socket_index][core_index] = P["cpu"][3]
+                Pb = Pb - P["cpu"][3]
+            else:
+                d["cpu"][socket_index][core_index] = P["cpu"][4]
+                Pb = Pb - P["cpu"][4]
+            (socket_index, core_index) = update_indicies(socket_index, core_index)
     # at this point we know that the application scalability is moderate
     # TODO: this
     #else:
     #    return
-    decide_core_affinity(appCfg)
-
+    return d["cpu"]
 
 def decide_core_affinity(appCfg):
     """
@@ -137,6 +136,7 @@ def decide_core_affinity(appCfg):
         # Pack as many activated cores into the fewest sockets
         for index in range(sum(reduce(list.__add__, P["cpu"], []))):
             a[index] = 1
+    return a
 
 
 def high_memory_intensity():
@@ -187,10 +187,13 @@ def affinity_to_string(affinity):
       ex : [[1, 1, 1], [1, 1, 0], [0, 0, 0]] = "0x1F"
     """
     n_str = "0x"
-    for n in affinity:
-        n = map(lambda x: str(x), n)  # Convert everything to strings
-        temp = ''.join(n)  # shove everything into one string
-        n_str += hex(int(temp, 2))  # and convert it from base 2->10->16
+    flat_affinity = [item for sublist in l for item in affinity]
+    
+    for n in flat_affinity:
+        if n == 1:
+            n_str += '1'
+        else:
+            n_str += '0'
     return n_str
 
 
