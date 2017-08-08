@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import sys
+sys.path.append('../')
+
+import configSelector as cs
+import configTrainer as ct
+import pprint
+import unittest
+import json
+
+rsc_file = open('../../config/resource1.json', 'r')
+rscCfg = json.loads(rsc_file.read())
+rsc_file.close()
+
+app_file = open('../../config/ep.json', 'r')
+appCfg = json.loads(app_file.read())
+app_file.close()
+
+pp = pprint.PrettyPrinter(indent=2)
+
+print("Resource json")
+pp.pprint(rscCfg)
+print ""
+print("App json")
+pp.pprint(appCfg)
+
+print ct.recommend_configuration(appCfg, rscCfg)

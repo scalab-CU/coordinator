@@ -1,8 +1,0 @@
-{
-    "app": "ep",
-    "psize": "C",
-    "path": "bin/",
-    "program_model": "omp",
-    "scalability": "high",
-    "memory_intensity": "low"
-}

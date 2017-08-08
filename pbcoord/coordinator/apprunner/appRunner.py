@@ -35,10 +35,12 @@ if __name__ == '__main__':
     submit_job = False
     if args.submit_job == "True":
         submit_job = True
-    pprint.pprint(appCfg)
-    pprint.pprint(rscCfg)
+        
+    # pprint.pprint(appCfg)
+    # pprint.pprint(rscCfg)
 
     (a, d) = configSelector.select_config(appCfg, rscCfg)
+    
     jobWrapper.make_wrapper(appCfg, rscCfg, a, d)
 
     if submit_job:
