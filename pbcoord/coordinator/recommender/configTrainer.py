@@ -117,7 +117,7 @@ def decide_core_allocation(appCfg, Pb):
             (socket_index, core_index) = update_indicies(socket_index, core_index)
             
     elif (appCfg['scalability'] == 'low'):
-
+        # give max power to a low number of cores
         while Pb >= P['cpu'][3]:
             if Pb >= P['cpu'][2]:
                 d['cpu'][socket_index][core_index] = P['cpu'][2]
@@ -130,6 +130,7 @@ def decide_core_allocation(appCfg, Pb):
     # TODO: this
     #else:
     #    return
+    #print(d['cpu'])
     return d['cpu']
 
 def decide_core_affinity(appCfg):
@@ -220,7 +221,8 @@ def determine_critical_power_levels(appCfg):
     read in and the maximum value read is stored as the critical power level
     """
     print("Determining critical power levels")
-    command = ['./measure_power.sh', '--affinity', '0', '--low-frequency', \
+    # Base command that is modified below
+    command = ['../recommender/measure_power.sh', '--affinity', '0', '--low-frequency', \
                '--benchmark', appCfg['app'], '--size', appCfg['psize'], '1>/dev/null']
     
     # run with one core at minimum freq

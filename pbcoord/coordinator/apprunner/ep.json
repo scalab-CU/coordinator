@@ -1,6 +1,9 @@
 {
 	"app": "ep",
-	"psize": "A",
+	"psize": "C",
 	"path": "/home/rge/software-benchmarks/NPB3.3/NPB3.3-OMP/bin/ep.A",
-	"program_model": "omp"
+	"program_model": "omp",
+	"scalability": "high",
+    "memory_intensity": "low"
+
 }

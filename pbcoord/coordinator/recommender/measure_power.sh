@@ -6,8 +6,9 @@ function usage() {
     exit 1
 }
 
-base_dir='/home/tsranso/pbcoord/pbcoord/coordinator/recommender'
-bin_dir="$base_dir/bin"
+#base_dir='/home/tsranso/pbcoord/pbcoord/coordinator/recommender'
+base_dir="$(pwd)"
+bin_dir="/home/pzou/software/software-benchmark/NPB/NPB3.3.1/NPB3.3-OMP/bin"
 kbase_dir="$base_dir/kbase"
 
 
@@ -50,16 +51,16 @@ if [ ! -d "$output_directory" ]; then
     mkdir $output_directory
 fi
 
+OMP_NUM_THREADS=24
+GOMP_CPU_AFFINITY=$affinity
+
 # Start rapl
 /usr/local/bin/rapl -s 0.1 -c 0,12 -f /tmp/$benchmark.rapl.log 2>&1 1>/dev/null &
 # record the rapl process id
 rapl_pid=$!
-OMP_NUM_THREADS=24
-GOMP_CPU_AFFINITY=$affinity
 # start benchmark with task affinity
 timeout 5 taskset -c $affinity $bin_dir/$benchmark.$size.x >> $output_directory/$benchmark.$size.data
 
-
-
 kill ${rapl_pid}
 
+# rm /tmp/$benchmark.rapl.log
