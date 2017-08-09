@@ -5,6 +5,7 @@ import json
 import pprint
 import subprocess
 import sys
+from math import floor
 from string import Template
 
 def getPowerSetting(rscCfg):
@@ -50,10 +51,22 @@ def getPowerSetting(rscCfg):
     else:
         return ''
 
+
+def rsum(L):
+    if type(L) != list:
+        return L
+    if L == []:
+        return 0
+    return rsum(L[0]) + rsum(L[1:])
+
+
 def getHWResources(appCfg, rscCfg):
+
+    print appCfg
+    print rscCfg
     resources = ''
     if appCfg['program_model'] == 'omp':
-        resources = 'export OMP_NUM_THREADS={}\nexport GOMP_CPU_AFFINITY=\"{}\"'.format(rscCfg['num_threads'], listToString(rscCfg['cpu_affinity']))
+        resources = 'export OMP_NUM_THREADS={}\nexport GOMP_CPU_AFFINITY=\"{}\"'.format(rscCfg['num_cores'], listToString(rscCfg['cpu_affinity']))
     return resources
 
 
@@ -90,13 +103,13 @@ def make_taskset_command(a, appCfg):
    return 'taskset -c ' + affinity_to_string(a) + " " + appCfg['path'] 
 
 def make_pb_command(d):
-    comm = "/usr/local/bin/pbset --pkg"
+    comm = "/usr/local/bin/pbset --pkg "
     for i in range(len(d['cpu'])):
-        comm += str(i) + ":" + str(sum(d['cpu'][i])) + ","
+        comm += str(i) + ":" + str(floor(sum(d['cpu'][i])))[:-2] + ","
     comm = comm[:-1]
     comm += " --dram "
     for i in range(len(d['mem'])):
-        comm += str(i) + ":" + str(sum(d['mem'])) + ","
+        comm += str(i) + ":" + str(floor(sum(d['mem'][i])))[:-2] + ","
     comm = comm[:-1]
     comm += "\n"
     return comm
@@ -114,7 +127,7 @@ $set_power_bound
 $exec_task
 """)
     wms_preample = "#PBS -l nodes={}\n".format(rscCfg["hostname"])
-    set_resources = getHWResources(appCfg, rscCfg)
+    #set_resources = getHWResources(appCfg, rscCfg)
     #set_power_bound = getPowerSetting(rscCfg)
     #exec_task = "{}\n".format(appCfg["path"])
     set_power_bound=make_pb_command(d)

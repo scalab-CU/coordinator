@@ -25,4 +25,17 @@ print ""
 print("App json")
 pp.pprint(appCfg)
 
-print ct.recommend_configuration(appCfg, rscCfg)
+(a, d) = ct.recommend_configuration(appCfg, rscCfg)
+pp.pprint(a)
+pp.pprint(d)
+
+def rsum(L):
+    if type(L) != list:
+        return L
+    if L == []:
+        return 0
+    return rsum(L[0]) + rsum(L[1:])
+
+pp.pprint("Total activated cpus: {}".format(rsum(a)))
+pp.pprint("Total cpu power: {}".format(rsum(d['cpu'])))
+pp.pprint("Total mem power: {}".format(rsum(d['mem'])))

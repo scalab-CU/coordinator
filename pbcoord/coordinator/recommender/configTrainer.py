@@ -36,7 +36,7 @@ P['mem'] = [0, 0]
 def print_info_about_globals():
     print ""
 
-def power_budget_is_sufficient(appCfg, Pb):
+def power_budget_is_sufficient(appCfg, rscCfg, Pb):
     """
     Determine if there is enough power being supplied to continue with algorithm
     Pb :: Power Budget
@@ -50,11 +50,12 @@ def power_budget_is_sufficient(appCfg, Pb):
     #     #read_pivot_config()
     #     return True
 
+    # the power budget is acceptable
     if (Pb > P['cpu'][3] + P['mem'][1]):
-        decide_memory_allocation(appCfg, Pb)
+        Pb = decide_memory_allocation(rscCfg, Pb)
         # P['mem'][1] is assigned to memory in every situation, so just chop that right off
         print 'Power budget is sufficient'
-        decide_core_allocation(appCfg, Pb - P['mem'][1])
+        decide_core_allocation(appCfg, Pb)
         decide_core_affinity(appCfg)
         return True
 
@@ -63,16 +64,18 @@ def power_budget_is_sufficient(appCfg, Pb):
         return False
 
 
-def decide_memory_allocation(appCfg, Pb):
+def decide_memory_allocation(rscCfg, Pb):
     """
     How is the power allocated to the memory?
     Pb :: Power Budget
     """
     # Paper never specifies to allocate anything other than L1 to the memory
     #if (Pb > P['cpu'][2] + P['mem'][1]):
-    single_memory_allocation = P['mem'][1] / number_cores
-    d['mem'] = [single_memory_allocation for k in range(number_cores)] + [P['mem'][1]]
-    return d['mem']
+    single_memory_allocation = P['mem'][1]
+    num_cores = rscCfg['num_cores']
+    modules = rscCfg['power_allocation']['mem']['modules']
+    d['mem'] = [[single_memory_allocation for i in range(num_cores / modules)] for k in range(modules)]
+    return Pb - (rscCfg['num_cores'] * P['mem'][1])
 
 
 def update_indicies(socket_index, core_index):
@@ -108,8 +111,10 @@ def decide_core_allocation(appCfg, Pb):
         while Pb >= (P['cpu'][2] - P['cpu'][3]):
             # Give power to as many cores as we can
             if d['cpu'][socket_index][core_index] == 0:
-                d['cpu'][socket_index][core_index] = P['cpu'][3]
+                # small logic problem here, sometimes overextended, maybe fix later
                 Pb = Pb - P['cpu'][3]
+                if Pb > 0:
+                    d['cpu'][socket_index][core_index] = P['cpu'][3]
             # and upgrade as power is available
             else:
                 d['cpu'][socket_index][core_index] == P['cpu'][2]
@@ -219,6 +224,7 @@ def affinity_to_string(affinity):
 def make_rapl_log(appCfg, rscCfg, cores, frequency):
     """
     appCfg - used for path, app, [psize]
+    rscCfg - used for num_cores to get all rapl core readings
     cores - used to test for one core or all cores
     frequency - used to test power with frequency
     """
@@ -292,7 +298,7 @@ def determine_critical_power_levels(appCfg, rscCfg):
     make_rapl_log(appCfg, rscCfg, 23, low_frequency)
     P['cpu'][1] = read_rapl(appCfg)[1]
 
-    print('\tDone: ' + str(P))
+    print('\n\tDone: ' + str(P))
 
 
 def read_rapl(appCfg):
@@ -312,7 +318,8 @@ def read_rapl(appCfg):
             for index in range(24):
                 cpu_powers.append(float(line[4*index+2]))
                 mem_powers.append(float(line[4*index+4]))
-                
+
+    subprocess.call(['cp', rapl_filename, '../kbase/'])
     subprocess.call(['sudo', 'rm', '-f', rapl_filename])
     
     # chop off the ends for rapl reading inconsistencies
@@ -340,6 +347,6 @@ def recommend_configuration(appCfg, rscCfg):
     Pb = rscCfg['power_allocation']['cpu']['total'] + \
          rscCfg['power_allocation']['mem']['total']
 
-    power_budget_is_sufficient(appCfg, Pb)
+    power_budget_is_sufficient(appCfg, rscCfg, Pb)
     # The fall-through of all the methods load up a and d
     return (a, d)

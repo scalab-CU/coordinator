@@ -33,7 +33,7 @@ if __name__ == '__main__':
     appCfg = parseJsonCfg(args.app_cfg)
     rscCfg = parseJsonCfg(args.resource_cfg)
     submit_job = False
-    if args.submit_job == "True":
+    if args.submit_job in ["True", "true", "t"]:
         submit_job = True
         
     # pprint.pprint(appCfg)

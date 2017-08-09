@@ -83,7 +83,7 @@ def get_config_path(rscCfg):
         #raise Exception('kbase file not found')
         #print(rscCfg)
         return None
-    return 'kbase/{}.json'.format(rscCfg['hostname'])
+    return '../kbase/{}.json'.format(rscCfg['hostname'])
 
 
 #def main():
