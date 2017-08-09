@@ -229,7 +229,7 @@ def make_rapl_log(appCfg, rscCfg, cores, frequency):
     frequency - used to test power with frequency
     """
     rapl_resolution = 0.1
-    rapl_location = "/usr/local/bin"
+    rapl_location = rscCfg['rapl_location']
     # if there is a problem size provided, use it in the rapl log name
     if 'psize' in appCfg:
         rapl_output_file = "/tmp/{}.rapl.log".format(appCfg['app'] + '.' + appCfg['psize'])

@@ -91,7 +91,7 @@ def get_config_path(rscCfg, appCfg):
 
 
 def select_config(appCfg, rscCfg):
-    if problem_is_known(appCfg, rscCfg) and False:
+    if problem_is_known(appCfg, rscCfg):
         print "Problem is known"
         return get_workload_configuration(appCfg, rscCfg)
     else:

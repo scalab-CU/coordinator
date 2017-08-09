@@ -13,6 +13,7 @@
 		"cpu": [4.577364793213134, 37.50281548250257, 28.112714740190892, 21.443515376458244]
 	},
 	"mu_power_gadget_location": "/home/tsranso/haswell/mu_powergadget_pzou",
+	"rapl_location": "/usr/local/bin",
     "power_allocation": {
 		"cpu": {
 			"total": 120,
