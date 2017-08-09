@@ -274,9 +274,17 @@ def determine_critical_power_levels(appCfg, rscCfg):
     read in and the maximum value read is stored as the critical power level
     """
     print("Determining critical power levels")
-    # TODO: replace these with some subprocess call to port better
-    high_frequency = 2300000
-    low_frequency  = 1200000
+
+    if 'cpu_max_frequency' in rscCfg:
+        high_frequency = rscCfg['cpu_max_frequency']
+    else:
+        high_frequency = 2300000
+
+    if 'cpu_min_frequency' in rscCfg:
+        low_frequency = rscCfg['cpu_min_frequency']
+    else:
+        low_frequency = 1200000
+        
     # run with one core at minimum freq
 
     make_rapl_log(appCfg, rscCfg, 0, low_frequency)

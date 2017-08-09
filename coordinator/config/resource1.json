@@ -2,6 +2,8 @@
     "wms": "torque",
     "hostname": "n01",
     "num_cores": 24,
+	"cpu_max_frequency": 2300000,
+	"cpu_min_frequency": 1200000,
     "power_allocation": {
 		"cpu": {
 			"total": 120,
