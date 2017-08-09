@@ -102,14 +102,25 @@ def make_taskset_command(a, appCfg):
     
    return 'taskset -c ' + affinity_to_string(a) + " " + appCfg['path'] 
 
-def make_pb_command(d):
-    comm = "/usr/local/bin/pbset --pkg "
+def make_pb_command(rscCfg, d):
+    if not 'base_power_levels' in rscCfg:
+        rscCfg['base_power_levels'] = {}
+        rscCfg['base_power_levels']['cpu'] = -1
+        rscCfg['base_power_levels']['mem'] = -1
+        
+    comm = rscCfg['mu_power_gadget_location'] + "/mu_power_gadget "
     for i in range(len(d['cpu'])):
-        comm += str(i) + ":" + str(floor(sum(d['cpu'][i])))[:-2] + ","
+        watts = floor(sum(d['cpu'][i]))
+        if watts == 0:
+            watts = rscCfg['base_power_levels']['cpu']
+        comm += '-' + str(i) + " " + str(watts)[:-2] + " "
     comm = comm[:-1]
-    comm += " --dram "
+    comm += " "
     for i in range(len(d['mem'])):
-        comm += str(i) + ":" + str(floor(sum(d['mem'][i])))[:-2] + ","
+        watts = floor(sum(d['mem'][i]))
+        if watts == 0:
+            watts = rscCfg['base_power_levels']['mem']
+        comm += '-' + str(i+len(d['cpu'])) + " " + str(watts)[:-2] + " "
     comm = comm[:-1]
     comm += "\n"
     return comm
@@ -127,15 +138,10 @@ $set_power_bound
 $exec_task
 """)
     wms_preample = "#PBS -l nodes={}\n".format(rscCfg["hostname"])
-    #set_resources = getHWResources(appCfg, rscCfg)
-    #set_power_bound = getPowerSetting(rscCfg)
-    #exec_task = "{}\n".format(appCfg["path"])
-    set_power_bound=make_pb_command(d)
-    exec_task=make_taskset_command(a, appCfg)
     
     with open(script, "w") as f:
         f.write(tmpl.substitute(wms_preample=wms_preample, 
-                                set_power_bound=make_pb_command(d), 
+                                set_power_bound=make_pb_command(rscCfg, d), 
                                 exec_task=make_taskset_command(a, appCfg)))
     print("Wrapper template filled")
     # with open(script) as f:

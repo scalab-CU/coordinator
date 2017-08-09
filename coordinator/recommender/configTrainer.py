@@ -307,6 +307,7 @@ def determine_critical_power_levels(appCfg, rscCfg):
     P['cpu'][1] = read_rapl(appCfg)[1]
 
     print('\n\tDone: ' + str(P))
+    return P
 
 
 def read_rapl(appCfg):
@@ -349,8 +350,13 @@ def recommend_configuration(appCfg, rscCfg):
     """
 
     # Fill in the P array for power levels
-    determine_critical_power_levels(appCfg, rscCfg)
-    
+    if not 'critical_power_levels' in rscCfg:
+        determine_critical_power_levels(appCfg, rscCfg)
+    else:
+        print "Critical power levels predetermined"
+        global P
+        P = rscCfg['critical_power_levels']
+        
     # Kick off the algorithm from step one from the paper
     Pb = rscCfg['power_allocation']['cpu']['total'] + \
          rscCfg['power_allocation']['mem']['total']

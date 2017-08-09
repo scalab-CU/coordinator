@@ -7,9 +7,10 @@ There is an example pair of json input files provided in coordinator/config, use
 | Value     | Command  |
 ------------|----------
 | hostname  | ```hostname```  |
-| num_cores | ```lscpu / grep CPU```  |
-| cpu sockets  | ```lscpu / grep Socket```  |
+| num_cores | ```lscpu ⎮ grep CPU```  |
+| cpu sockets  | ```lscpu ⎮ grep Socket```  |
 | cpu min/max freq | ```cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_{min,max}_freq```  |
+| base_power_levels | Execute utils/read_base_levels.py |
 
 ## Execute the appRunner.py
 The controller uses positional argements, for example:

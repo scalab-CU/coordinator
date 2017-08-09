@@ -21,7 +21,7 @@ def problem_is_known(appCfg, rscCfg):
     appCfg :: dict object from the appRunner, describes application configuration
     rscCfg :: dict from the appRunner, describes resource configuration
     """
-    path = get_config_path(rscCfg)
+    path = get_config_path(rscCfg, appCfg)
     if path is None or not os.path.isfile(path):
         #raise Exception('Kbase not found', '')
         return False # Bonk out if there is no kbase file
@@ -38,17 +38,21 @@ def write_to_config_file(appCfg, rscCfg, a, d):
     d :: power distribution, also from configTrainer
     """
 
-    path = get_config_path(rscCfg)
+    path = get_config_path(rscCfg, appCfg)
 
     if not os.path.isfile(path):
         with open(path, 'w+') as config_file:
-            config = {'a': a, 'd': d}
-            config_file.write(json.dumps(config))
+            config = {appCfg['app'] : {appCfg['psize'] : {'a': a, 'd': d}}}
+            config_file.write(json.dumps(config, indent=2, sort_keys=True))
     else:
-        with open(path, 'rw') as config_file:
+        with open(path, 'r+') as config_file:
             config = {'a': a, 'd': d}
             kbase = json.loads(config_file.read())
 
+            if appCfg['app'] in kbase:
+                if appCfg['psize'] in kbase[appCfg['app']]:
+                    return
+            
             # Make sure our indicies exist in the kbase
             if not appCfg['app'] in kbase:
                 kbase[appCfg['app']] = {}
@@ -58,7 +62,7 @@ def write_to_config_file(appCfg, rscCfg, a, d):
 
             kbase[appCfg['app']][appCfg['psize']] = config
 
-            #config_file.write(json.dumps(config))
+            config_file.write(json.dumps(config, indent=2, sort_keys=True))
 
 
 def get_workload_configuration(appCfg, rscCfg):
@@ -66,7 +70,7 @@ def get_workload_configuration(appCfg, rscCfg):
     Pulls the configuration out of the kbase, 
     only use after verifying the data exists
     """
-    path = get_config_path(rscCfg)
+    path = get_config_path(rscCfg, appCfg)
 
     with open(path, 'r') as config_file:
         json_data = json.loads(config_file.read())
@@ -74,7 +78,7 @@ def get_workload_configuration(appCfg, rscCfg):
         return (data['a'], data['d'])
 
 
-def get_config_path(rscCfg):
+def get_config_path(rscCfg, appCfg):
     """
     Arbitrary choice here, I think the hostname will provide the
     smallest number of files to store our knowledge base
@@ -86,11 +90,12 @@ def get_config_path(rscCfg):
     return '../kbase/{}.json'.format(rscCfg['hostname'])
 
 
-#def main():
 def select_config(appCfg, rscCfg):
-    if problem_is_known(appCfg, rscCfg):
+    if problem_is_known(appCfg, rscCfg) and False:
+        print "Problem is known"
         return get_workload_configuration(appCfg, rscCfg)
     else:
+        print "Problem not known, recommending configuration"
         (a, d) = configTrainer.recommend_configuration(appCfg, rscCfg)
         write_to_config_file(appCfg, rscCfg, a, d)
         return (a, d)
