@@ -7,8 +7,8 @@ There is an example pair of json input files provided in coordinator/config, use
 | Value     | Command  |
 ------------|----------
 | hostname  | ```hostname```  |
-| num_cores | ```lscpu | grep CPU```  |
-| cpu sockets  | ```lscpu | grep Socket```  |
+| num_cores | ```lscpu / grep CPU```  |
+| cpu sockets  | ```lscpu / grep Socket```  |
 | cpu min/max freq | ```cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_{min,max}_freq```  |
 
 ## Execute the appRunner.py
