@@ -41,12 +41,12 @@ def median(L):
         return floor((L[0] + L[1]) / 2)
     return median(L[1:-1])
 
-def determine_base_power_levels():
+def determine_base_power_levels(rscCfg):
 
     print "Determining base power levels"
     
     rapl_resolution = 0.1
-    rapl_location = "/usr/local/bin"
+    rapl_location = rscCfg['rapl_reader_location']
     rapl_filename = "/tmp/base_power.log"
 
     # we want the power of the entire socket, even if only running on one core
@@ -87,7 +87,6 @@ def write_problem_config_file(appCfg, rscCfg, a, d):
     if not os.path.isfile(problem_path):
         with open(problem_path, 'w+') as problem_config_file:
             config = {appCfg['app'] : {appCfg['psize'] : {'a': a, 'd': d}}}
-            print "3"
             problem_config_file.write(json.dumps(config, indent=2, sort_keys=True))
     else:
         with open(problem_path, 'w+') as problem_config_file:
@@ -106,7 +105,6 @@ def write_problem_config_file(appCfg, rscCfg, a, d):
                 kbase[appCfg['app']][appCfg['psize']] = {}
 
             kbase[appCfg['app']][appCfg['psize']] = config
-            print "4"
             problem_config_file.write(json.dumps(config, indent=2, sort_keys=True))
 
 def get_workload_configuration(appCfg, rscCfg):
@@ -138,10 +136,9 @@ def ensure_power_level_files(appCfg, rscCfg):
     
     if not os.path.isfile(path):
         with open(path, 'w+') as power_config_file:
-            (base_mem, base_cpu) = determine_base_power_levels()
+            (base_mem, base_cpu) = determine_base_power_levels(rscCfg)
             critical_power_levels = ct.determine_critical_power_levels(appCfg, rscCfg)
             config = {"base_power_levels" : {"cpu" : base_cpu, "mem" : base_mem}, "critical_power_levels" : critical_power_levels}
-            print "1"
             power_config_file.write(json.dumps(config, indent=2, sort_keys=True))
             print "Wrote json file"
     else:
@@ -150,8 +147,7 @@ def ensure_power_level_files(appCfg, rscCfg):
             if not 'critical_power_levels' in powers:
                 powers['critical_power_levels'] = ct.determine_critical_power_levels(appCfg, rscCfg)
             if not 'base_power_levels' in powers:
-                powers['base_power_levels'] = determine_base_power_levels()
-            print "2"
+                powers['base_power_levels'] = determine_base_power_levels(rscCfg)
             power_config_file.write(json.dumps(powers, indent=2, sort_keys=True))
 
 

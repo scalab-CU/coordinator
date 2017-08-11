@@ -79,10 +79,11 @@ def decide_memory_allocation(rscCfg, Pb):
     Pb :: Power Budget
     """
     # Paper never specifies to allocate anything other than L1 to the memory
+    # because zero indexing... L1 -> P['mem'][0]
     #if (Pb > P['cpu'][2] + P['mem'][1]):
     modules = rscCfg['num_dram_modules']
-    d['mem'] = [P['mem'][1] for k in range(modules)]
-    return Pb - (modules * P['mem'][1])
+    d['mem'] = [P['mem'][0] for k in range(modules)]
+    return Pb - (modules * P['mem'][0])
 
 
 def update_indicies(socket_index, core_index):
@@ -228,26 +229,33 @@ def affinity_to_string(affinity):
     return ','.join(str(core) for core in cores)
 
 
-def make_rapl_log(appCfg, rscCfg, cores, frequency):
+def make_rapl_log(appCfg, rscCfg, frequency, cores):
     """
     appCfg - used for path, app, [psize]
     rscCfg - used for num_cores to get all rapl core readings
-    cores - used to test for one core or all cores
     frequency - used to test power with frequency
+    cores::string - "one" or "all"
     """
     rapl_resolution = 0.1
-    rapl_location = rscCfg['rapl_location']
+    rapl_location = rscCfg['rapl_reader_location']
     # if there is a problem size provided, use it in the rapl log name
     if 'psize' in appCfg:
         rapl_output_file = "/tmp/{}.rapl.log".format(appCfg['app'] + '.' + appCfg['psize'])
     else:
         rapl_output_file = "/tmp/{}.rapl.log".format(appCfg['app'] + '.' + appCfg['psize'])
 
+    print "Frequency: {}".format(frequency)
+    print "Cores: {}".format(cores)
+        
     # we want the power of the entire socket, even if only running on one core
     rapl_command = ['sudo', rapl_location + '/rapl', '-s', str(rapl_resolution), '-c', '0,12', '-f', rapl_output_file]
 
     # this is what limits the benchmark to the determined cores
-    benchmark_command = ['timeout', '8', 'taskset', '-c', '0,12', appCfg['path']]
+    benchmark_command = []
+    if cores == "one":
+        benchmark_command = ['timeout', '8', 'taskset', '-c', '0', appCfg['path']]
+    else:
+        benchmark_command = ['timeout', '8',  appCfg['path']]
 
     #print("Adjusting frequencies")
     # TODO: this is less than good, prompt the user and do an echo "$pass" | sudo -S "stuff"
@@ -263,7 +271,8 @@ def make_rapl_log(appCfg, rscCfg, cores, frequency):
     #print("Killed rapl process")
     #print("Restoring frequencies")
     # put the cpus back to max frequency so we don't mess up the system for other users
-    frequency_command = ['sudo', 'cpupower', 'frequency-set', '-f', str(2300000)]
+    high_frequency = subprocess.check_output(['cat', '/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq'])
+    frequency_command = ['sudo', 'cpupower', 'frequency-set', '-f', high_frequency]
     subprocess.call(frequency_command, stdout=subprocess.PIPE)
     #print("Rapl log generated")
 
@@ -279,27 +288,30 @@ def determine_critical_power_levels(appCfg, rscCfg):
     low_frequency  = int(subprocess.check_output(['cat', '/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq']))
     
     # run with one core at minimum freq
-
-    make_rapl_log(appCfg, rscCfg, 0, low_frequency)
+    make_rapl_log(appCfg, rscCfg, low_frequency, 'one')
     power_levels = read_rapl(appCfg)
-    P['cpu'][3] = power_levels[1]
     P['mem'][1] = power_levels[0]
+    P['cpu'][3] = power_levels[1]
     
     # run with one core at maximum freq
-    make_rapl_log(appCfg, rscCfg, 0, high_frequency)
+    make_rapl_log(appCfg, rscCfg, high_frequency, 'one')
     P['cpu'][2] = read_rapl(appCfg)[1]
 
     # run with all cores at maximum freq    
-    make_rapl_log(appCfg, rscCfg, 23, high_frequency)
+    make_rapl_log(appCfg, rscCfg, high_frequency, 'all')
     power_levels = read_rapl(appCfg)
-    P['cpu'][0] = power_levels[0]
-    P['mem'][0] = power_levels[1]
+    P['mem'][0] = power_levels[0]
+    P['cpu'][0] = power_levels[1]
     
     # run with all cores at minimum freq
-    make_rapl_log(appCfg, rscCfg, 23, low_frequency)
+    make_rapl_log(appCfg, rscCfg, low_frequency, 'all')
     P['cpu'][1] = read_rapl(appCfg)[1]
 
     print('\n\tDone: ' + str(P))
+    for index, e in enumerate(P['mem']):
+        print "{} - {}".format(index, P['mem'][index])
+    for index, e in enumerate(P['cpu']):
+        print "{} - {}".format(index, P['cpu'][index])
     return P
 
 
@@ -322,7 +334,9 @@ def read_rapl(appCfg):
             mem_powers.append(float(line[4]))
             mem_powers.append(float(line[8]))
 
-    subprocess.call(['cp', rapl_filename, '../kbase/'])
+    #print mem_powers
+    print cpu_powers
+    #subprocess.call(['cp', rapl_filename, '../kbase/'])
     subprocess.call(['sudo', 'rm', '-f', rapl_filename])
     
     # chop off the ends for rapl reading inconsistencies

@@ -1,7 +1,7 @@
 {
     "wms": "torque",
 	"rapl_ctl_location": "../../rapl-ctl",
-    "rapl_location": "/usr/local/bin",
+    "rapl_reader_location": "../../rapl-reader",
     "power_budget" : 180,
     "num_dram_modules" : 2
 }
