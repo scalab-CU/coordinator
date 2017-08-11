@@ -11,9 +11,13 @@ Created 5 June, 2017
 @author: tsranso
 """
 
-import configTrainer
+import subprocess
+import time
+import configTrainer as ct
 import json
 import os.path
+from math import floor
+from string import replace
 
 def problem_is_known(appCfg, rscCfg):
     """
@@ -21,7 +25,7 @@ def problem_is_known(appCfg, rscCfg):
     appCfg :: dict object from the appRunner, describes application configuration
     rscCfg :: dict from the appRunner, describes resource configuration
     """
-    path = get_config_path(rscCfg, appCfg)
+    path = get_problem_config_path()
     if path is None or not os.path.isfile(path):
         #raise Exception('Kbase not found', '')
         return False # Bonk out if there is no kbase file
@@ -30,24 +34,65 @@ def problem_is_known(appCfg, rscCfg):
         return appCfg['app'] in kbase and appCfg['psize'] in kbase[appCfg['app']]
     return false  # just default to false for safety
 
+def median(L):
+    if len(L) == 1:
+        return floor(L[0])
+    if len(L) == 2:
+        return floor((L[0] + L[1]) / 2)
+    return median(L[1:-1])
 
-def write_to_config_file(appCfg, rscCfg, a, d):
+def determine_base_power_levels():
+
+    print "Determining base power levels"
+    
+    rapl_resolution = 0.1
+    rapl_location = "/usr/local/bin"
+    rapl_filename = "/tmp/base_power.log"
+
+    # we want the power of the entire socket, even if only running on one core
+    rapl_command = ['sudo', rapl_location + '/rapl', '-s', str(rapl_resolution), '-c', '0,12', '-f', rapl_filename]
+    rapl_pid = subprocess.Popen(rapl_command, stdout=subprocess.PIPE).pid
+    time.sleep(5)
+    subprocess.call(['sudo', 'kill', str(rapl_pid)])
+    
+    cpu_powers = []
+    mem_powers = []
+        
+    with open(rapl_filename, 'r') as rapl_log:
+        next(rapl_log) # jump over the header line
+        for line in rapl_log:
+            line = ' '.join(line.split())
+            line = line.split()
+            cpu_powers.append(float(line[2]))
+            cpu_powers.append(float(line[6]))
+            mem_powers.append(float(line[4]))
+            mem_powers.append(float(line[8]))
+
+    #subprocess.call(['sudo', 'rm', '-f', rapl_filename])
+    
+    # chop off the ends for rapl reading inconsistencies
+    return (median(mem_powers[5:-5]), median(cpu_powers[5:-5]))
+
+
+def write_problem_config_file(appCfg, rscCfg, a, d):
     """
     Writes the configuration to the appropriate kbase database file
     a :: affinity map from configTrainer
     d :: power distribution, also from configTrainer
     """
 
-    path = get_config_path(rscCfg, appCfg)
+    problem_path = get_problem_config_path()
+    power_levels_path = get_power_config_path()
 
-    if not os.path.isfile(path):
-        with open(path, 'w+') as config_file:
+    if not os.path.isfile(problem_path):
+        with open(problem_path, 'w+') as problem_config_file:
             config = {appCfg['app'] : {appCfg['psize'] : {'a': a, 'd': d}}}
-            config_file.write(json.dumps(config, indent=2, sort_keys=True))
+            print "3"
+            problem_config_file.write(json.dumps(config, indent=2, sort_keys=True))
     else:
-        with open(path, 'r+') as config_file:
+        with open(problem_path, 'w+') as problem_config_file:
             config = {'a': a, 'd': d}
-            kbase = json.loads(config_file.read())
+            kbase = json.loads(problem_config_file.read())
 
             if appCfg['app'] in kbase:
                 if appCfg['psize'] in kbase[appCfg['app']]:
@@ -61,33 +106,53 @@ def write_to_config_file(appCfg, rscCfg, a, d):
                 kbase[appCfg['app']][appCfg['psize']] = {}
 
             kbase[appCfg['app']][appCfg['psize']] = config
-
-            config_file.write(json.dumps(config, indent=2, sort_keys=True))
-
+            print "4"
+            problem_config_file.write(json.dumps(config, indent=2, sort_keys=True))
 
 def get_workload_configuration(appCfg, rscCfg):
     """
     Pulls the configuration out of the kbase, 
     only use after verifying the data exists
     """
-    path = get_config_path(rscCfg, appCfg)
+    path = get_problem_config_path()
 
     with open(path, 'r') as config_file:
         json_data = json.loads(config_file.read())
         data = json_data[appCfg['app']][appCfg['psize']]
         return (data['a'], data['d'])
 
+def get_power_config_path():
+    return replace(get_problem_config_path(), 'problems.json', 'power.json')
 
-def get_config_path(rscCfg, appCfg):
+def get_problem_config_path():
     """
     Arbitrary choice here, I think the hostname will provide the
     smallest number of files to store our knowledge base
     """
-    if rscCfg is None or not 'hostname' in rscCfg:
-        #raise Exception('kbase file not found')
-        #print(rscCfg)
-        return None
-    return '../kbase/{}.json'.format(rscCfg['hostname'])
+    hostname = subprocess.check_output(['hostname'], shell=True).strip()
+    return '../kbase/{}.problems.json'.format(hostname)
+
+def ensure_power_level_files(appCfg, rscCfg):
+
+    path = get_power_config_path()
+    
+    if not os.path.isfile(path):
+        with open(path, 'w+') as power_config_file:
+            (base_mem, base_cpu) = determine_base_power_levels()
+            critical_power_levels = ct.determine_critical_power_levels(appCfg, rscCfg)
+            config = {"base_power_levels" : {"cpu" : base_cpu, "mem" : base_mem}, "critical_power_levels" : critical_power_levels}
+            print "1"
+            power_config_file.write(json.dumps(config, indent=2, sort_keys=True))
+            print "Wrote json file"
+    else:
+        with open(path, 'w+') as power_config_file:
+            powers = json.loads(power_config_file.read())
+            if not 'critical_power_levels' in powers:
+                powers['critical_power_levels'] = ct.determine_critical_power_levels(appCfg, rscCfg)
+            if not 'base_power_levels' in powers:
+                powers['base_power_levels'] = determine_base_power_levels()
+            print "2"
+            power_config_file.write(json.dumps(powers, indent=2, sort_keys=True))
 
 
 def select_config(appCfg, rscCfg):
@@ -96,6 +161,9 @@ def select_config(appCfg, rscCfg):
         return get_workload_configuration(appCfg, rscCfg)
     else:
         print "Problem not known, recommending configuration"
-        (a, d) = configTrainer.recommend_configuration(appCfg, rscCfg)
-        write_to_config_file(appCfg, rscCfg, a, d)
+        ensure_power_level_files(appCfg, rscCfg)
+        with open(get_power_config_path(), 'r') as power_config:
+            powerCfg = json.loads(power_config.read())
+        (a, d) = ct.recommend_configuration(appCfg, rscCfg, powerCfg)
+        write_problem_config_file(appCfg, rscCfg, a, d)
         return (a, d)

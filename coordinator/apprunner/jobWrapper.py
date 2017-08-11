@@ -8,48 +8,48 @@ import sys
 from math import floor
 from string import Template
 
-def getPowerSetting(rscCfg):
-    if 'power_allocation' in rscCfg.keys():
-        power_setting = "/usr/local/bin/pbset"
-        pwr_setting = rscCfg['power_allocation']
-        if 'cpu' in pwr_setting.keys():
-            socket_pwrs = pwr_setting['cpu']['sockets']
-            s = ''
-            psum = 0
-            for k in sorted(socket_pwrs.keys()):
-                v = socket_pwrs[k]
-                psum = psum + v
-                if s == '':
-                    s = '--pkg {}:{}'.format(k, v)
-                else:
-                    s = s + ',{}:{}'.format(k, v)
-            if psum != pwr_setting['cpu']['total']:
-                sys.stderr.write("incorrect power setting: total power does not equal to the sum of socket power\n")
-                sys.exit(1)
+# def getPowerSetting(rscCfg):
+#     if 'power_allocation' in rscCfg.keys():
+#         power_setting = "/usr/local/bin/pbset"
+#         pwr_setting = rscCfg['power_allocation']
+#         if 'cpu' in pwr_setting.keys():
+#             socket_pwrs = pwr_setting['cpu']['sockets']
+#             s = ''
+#             psum = 0
+#             for k in sorted(socket_pwrs.keys()):
+#                 v = socket_pwrs[k]
+#                 psum = psum + v
+#                 if s == '':
+#                     s = '--pkg {}:{}'.format(k, v)
+#                 else:
+#                     s = s + ',{}:{}'.format(k, v)
+#             if psum != pwr_setting['cpu']['total']:
+#                 sys.stderr.write("incorrect power setting: total power does not equal to the sum of socket power\n")
+#                 sys.exit(1)
                 
-            if s != '':
-                power_setting = power_setting + ' ' + s
+#             if s != '':
+#                 power_setting = power_setting + ' ' + s
                 
-        if 'mem' in pwr_setting.keys():
-            socket_pwrs = pwr_setting['mem']['modules']
-            s = ''
-            psum = 0
-            for k in sorted(socket_pwrs.keys()):
-                v = socket_pwrs[k]
-                psum = psum + v
-                if s == '':
-                    s = '--dram {}:{}'.format(k, v)
-                else:
-                    s = s + ',{}:{}'.format(k, v)
-            if psum != pwr_setting['mem']['total']:
-                sys.stderr.write("incorrect power setting: total power does not equal to the sum of socket power\n")
-                sys.exit(1)
+#         if 'mem' in pwr_setting.keys():
+#             socket_pwrs = pwr_setting['mem']['modules']
+#             s = ''
+#             psum = 0
+#             for k in sorted(socket_pwrs.keys()):
+#                 v = socket_pwrs[k]
+#                 psum = psum + v
+#                 if s == '':
+#                     s = '--dram {}:{}'.format(k, v)
+#                 else:
+#                     s = s + ',{}:{}'.format(k, v)
+#             if psum != pwr_setting['mem']['total']:
+#                 sys.stderr.write("incorrect power setting: total power does not equal to the sum of socket power\n")
+#                 sys.exit(1)
 
-            if s != '':
-                power_setting = power_setting + ' ' + s
-        return power_setting
-    else:
-        return ''
+#             if s != '':
+#                 power_setting = power_setting + ' ' + s
+#         return power_setting
+#     else:
+#         return ''
 
 
 def rsum(L):
@@ -99,7 +99,6 @@ def affinity_to_string(affinity):
     return ','.join(str(core) for core in cores)
 
 def make_taskset_command(a, appCfg):
-    
    return 'taskset -c ' + affinity_to_string(a) + " " + appCfg['path'] 
 
 def make_pb_command(rscCfg, d):
@@ -107,8 +106,9 @@ def make_pb_command(rscCfg, d):
         rscCfg['base_power_levels'] = {}
         rscCfg['base_power_levels']['cpu'] = -1
         rscCfg['base_power_levels']['mem'] = -1
-        
-    comm = rscCfg['mu_power_gadget_location'] + "/mu_power_gadget "
+
+    print d
+    comm = rscCfg['rapl_ctl_location'] + "/mu_power_gadget "
     for i in range(len(d['cpu'])):
         watts = floor(sum(d['cpu'][i]))
         if watts == 0:
@@ -117,7 +117,7 @@ def make_pb_command(rscCfg, d):
     comm = comm[:-1]
     comm += " "
     for i in range(len(d['mem'])):
-        watts = floor(sum(d['mem'][i]))
+        watts = d['mem'][i]
         if watts == 0:
             watts = rscCfg['base_power_levels']['mem']
         comm += '-' + str(i+len(d['cpu'])) + " " + str(watts)[:-2] + " "
@@ -137,11 +137,12 @@ $set_power_bound
 # Run the binary
 $exec_task
 """)
-    wms_preample = "#PBS -l nodes={}\n".format(rscCfg["hostname"])
+    hostname = subprocess.check_output(['hostname'])
+    wms_preample = "#PBS -l nodes={}\n".format(hostname)
     
     with open(script, "w") as f:
         f.write(tmpl.substitute(wms_preample=wms_preample, 
-                                set_power_bound=make_pb_command(rscCfg, d), 
+                                set_power_bound=make_pb_command(rscCfg, d),
                                 exec_task=make_taskset_command(a, appCfg)))
     print("Wrapper template filled")
     # with open(script) as f:

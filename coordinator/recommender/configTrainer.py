@@ -14,6 +14,7 @@ to the user
 '''
 
 from functools import reduce
+from math import floor
 import json
 import datetime
 import subprocess
@@ -35,6 +36,14 @@ P['mem'] = [0, 0]
 
 def print_info_about_globals():
     print ""
+
+def median(L):
+    if len(L) == 1:
+        return floor(L[0])
+    if len(L) == 2:
+        return floor((L[0] + L[1]) / 2)
+    return median(L[1:-1])
+
 
 def power_budget_is_sufficient(appCfg, rscCfg, Pb):
     """
@@ -71,11 +80,9 @@ def decide_memory_allocation(rscCfg, Pb):
     """
     # Paper never specifies to allocate anything other than L1 to the memory
     #if (Pb > P['cpu'][2] + P['mem'][1]):
-    single_memory_allocation = P['mem'][1]
-    num_cores = rscCfg['num_cores']
-    modules = rscCfg['power_allocation']['mem']['modules']
-    d['mem'] = [[single_memory_allocation for i in range(num_cores / modules)] for k in range(modules)]
-    return Pb - (rscCfg['num_cores'] * P['mem'][1])
+    modules = rscCfg['num_dram_modules']
+    d['mem'] = [P['mem'][1] for k in range(modules)]
+    return Pb - (modules * P['mem'][1])
 
 
 def update_indicies(socket_index, core_index):
@@ -236,18 +243,11 @@ def make_rapl_log(appCfg, rscCfg, cores, frequency):
     else:
         rapl_output_file = "/tmp/{}.rapl.log".format(appCfg['app'] + '.' + appCfg['psize'])
 
-    # gotta build that core string for rapl to read all our cores
-    core_string = ""
-    for i in range(rscCfg['num_cores']):
-        core_string += str(i) + ","
-    # but that last comma causes us some problems
-    core_string = core_string[:-1]
-        
     # we want the power of the entire socket, even if only running on one core
-    rapl_command = ['sudo', rapl_location + '/rapl', '-s', str(rapl_resolution), '-c', core_string, '-f', rapl_output_file]
+    rapl_command = ['sudo', rapl_location + '/rapl', '-s', str(rapl_resolution), '-c', '0,12', '-f', rapl_output_file]
 
     # this is what limits the benchmark to the determined cores
-    benchmark_command = ['timeout', '8', 'taskset', '-c', '0-' + str(cores), appCfg['path']]
+    benchmark_command = ['timeout', '8', 'taskset', '-c', '0,12', appCfg['path']]
 
     #print("Adjusting frequencies")
     # TODO: this is less than good, prompt the user and do an echo "$pass" | sudo -S "stuff"
@@ -275,16 +275,9 @@ def determine_critical_power_levels(appCfg, rscCfg):
     """
     print("Determining critical power levels")
 
-    if 'cpu_max_frequency' in rscCfg:
-        high_frequency = rscCfg['cpu_max_frequency']
-    else:
-        high_frequency = 2300000
-
-    if 'cpu_min_frequency' in rscCfg:
-        low_frequency = rscCfg['cpu_min_frequency']
-    else:
-        low_frequency = 1200000
-        
+    high_frequency = int(subprocess.check_output(['cat', '/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq']))
+    low_frequency  = int(subprocess.check_output(['cat', '/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq']))
+    
     # run with one core at minimum freq
 
     make_rapl_log(appCfg, rscCfg, 0, low_frequency)
@@ -324,22 +317,21 @@ def read_rapl(appCfg):
         for line in rapl_log:
             line = ' '.join(line.split())
             line = line.split()
-            for index in range(24):
-                cpu_powers.append(float(line[4*index+2]))
-                mem_powers.append(float(line[4*index+4]))
+            cpu_powers.append(float(line[2]))
+            cpu_powers.append(float(line[6]))
+            mem_powers.append(float(line[4]))
+            mem_powers.append(float(line[8]))
 
     subprocess.call(['cp', rapl_filename, '../kbase/'])
     subprocess.call(['sudo', 'rm', '-f', rapl_filename])
     
     # chop off the ends for rapl reading inconsistencies
-    #print(str(sum(mem_powers[5:-5])/len(mem_powers[5:-5])))
-    #print(str(sum(cpu_powers[5:-5])/len(cpu_powers[5:-5])))
-    return (sum(mem_powers[5:-5])/len(mem_powers[5:-5]), sum(cpu_powers[5:-5])/len(cpu_powers[5:-5]))
+    return (median(mem_powers[5:-5]), median(cpu_powers[5:-5]))
 
 
 # (W, SZ, Pb) -> ([a], [d])
 # (program, problem size, power budget) -> ([a], [d])
-def recommend_configuration(appCfg, rscCfg):
+def recommend_configuration(appCfg, rscCfg, powerCfg):
     """
     Suggest a configuration to run the application in.
 
@@ -350,16 +342,15 @@ def recommend_configuration(appCfg, rscCfg):
     """
 
     # Fill in the P array for power levels
-    if not 'critical_power_levels' in rscCfg:
+    if not 'critical_power_levels' in powerCfg:
         determine_critical_power_levels(appCfg, rscCfg)
     else:
         print "Critical power levels predetermined"
         global P
-        P = rscCfg['critical_power_levels']
+        P = powerCfg['critical_power_levels']
         
     # Kick off the algorithm from step one from the paper
-    Pb = rscCfg['power_allocation']['cpu']['total'] + \
-         rscCfg['power_allocation']['mem']['total']
+    Pb = rscCfg['power_budget']
 
     power_budget_is_sufficient(appCfg, rscCfg, Pb)
     # The fall-through of all the methods load up a and d
