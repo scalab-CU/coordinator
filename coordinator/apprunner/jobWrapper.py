@@ -101,35 +101,37 @@ def affinity_to_string(affinity):
 def make_taskset_command(a, appCfg):
    return 'taskset -c ' + affinity_to_string(a) + " " + appCfg['path'] 
 
-def make_pb_command(rscCfg, d):
-    if not 'base_power_levels' in rscCfg:
-        rscCfg['base_power_levels'] = {}
-        rscCfg['base_power_levels']['cpu'] = -1
-        rscCfg['base_power_levels']['mem'] = -1
+def make_pb_command(powerCfg, rscCfg, d):
+    if not 'base_power_levels' in powerCfg:
+        powerCfg['base_power_levels'] = {}
+        powerCfg['base_power_levels']['cpu'] = -1
+        powerCfg['base_power_levels']['mem'] = -1
 
     print d
     comm = rscCfg['rapl_ctl_location'] + "/mu_power_gadget "
     for i in range(len(d['cpu'])):
         watts = floor(sum(d['cpu'][i]))
         if watts == 0:
-            watts = rscCfg['base_power_levels']['cpu']
+            watts = powerCfg['base_power_levels']['cpu']
         comm += '-' + str(i) + " " + str(watts)[:-2] + " "
     comm = comm[:-1]
     comm += " "
     for i in range(len(d['mem'])):
         watts = d['mem'][i]
         if watts == 0:
-            watts = rscCfg['base_power_levels']['mem']
+            watts = powerCfg['base_power_levels']['mem']
         comm += '-' + str(i+len(d['cpu'])) + " " + str(watts)[:-2] + " "
     comm = comm[:-1]
     comm += "\n"
     return comm
 
-def make_wrapper(appCfg, rscCfg, a, d):
+def make_wrapper(appCfg, rscCfg, powerCfg, a, d):
     script = "{}.job".format(appCfg["app"])
     tmpl = Template("""#!/bin/bash
 
 $wms_preample
+
+cd $appRunner_directory
 
 # Set Power Bounds
 $set_power_bound
@@ -139,10 +141,12 @@ $exec_task
 """)
     hostname = subprocess.check_output(['hostname'])
     wms_preample = "#PBS -l nodes={}\n".format(hostname)
+    app_directory = subprocess.check_output(['pwd'])
     
     with open(script, "w") as f:
-        f.write(tmpl.substitute(wms_preample=wms_preample, 
-                                set_power_bound=make_pb_command(rscCfg, d),
+        f.write(tmpl.substitute(wms_preample=wms_preample,
+                                appRunner_directory=app_directory,
+                                set_power_bound=make_pb_command(powerCfg, rscCfg, d),
                                 exec_task=make_taskset_command(a, appCfg)))
     print("Wrapper template filled")
     # with open(script) as f:

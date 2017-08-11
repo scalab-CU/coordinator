@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     (a, d) = configSelector.select_config(appCfg, rscCfg)
     
-    jobWrapper.make_wrapper(appCfg, rscCfg, a, d)
+    jobWrapper.make_wrapper(appCfg, rscCfg, configSelector.get_power_cfg(), a, d)
 
     if submit_job:
         subprocess.call(["qsub", "{}.job".format(appCfg["app"])])

@@ -150,6 +150,11 @@ def ensure_power_level_files(appCfg, rscCfg):
                 powers['base_power_levels'] = determine_base_power_levels(rscCfg)
             power_config_file.write(json.dumps(powers, indent=2, sort_keys=True))
 
+def get_power_cfg():
+    with open(get_power_config_path(), 'r') as power_config:
+        powerCfg = json.loads(power_config.read())
+    return powerCfg
+    
 
 def select_config(appCfg, rscCfg):
     if problem_is_known(appCfg, rscCfg):
@@ -158,8 +163,6 @@ def select_config(appCfg, rscCfg):
     else:
         print "Problem not known, recommending configuration"
         ensure_power_level_files(appCfg, rscCfg)
-        with open(get_power_config_path(), 'r') as power_config:
-            powerCfg = json.loads(power_config.read())
-        (a, d) = ct.recommend_configuration(appCfg, rscCfg, powerCfg)
+        (a, d) = ct.recommend_configuration(appCfg, rscCfg, get_power_cfg())
         write_problem_config_file(appCfg, rscCfg, a, d)
         return (a, d)

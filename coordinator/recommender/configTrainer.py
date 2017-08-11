@@ -244,8 +244,8 @@ def make_rapl_log(appCfg, rscCfg, frequency, cores):
     else:
         rapl_output_file = "/tmp/{}.rapl.log".format(appCfg['app'] + '.' + appCfg['psize'])
 
-    print "Frequency: {}".format(frequency)
-    print "Cores: {}".format(cores)
+    #print "Frequency: {}".format(frequency)
+    #print "Cores: {}".format(cores)
         
     # we want the power of the entire socket, even if only running on one core
     rapl_command = ['sudo', rapl_location + '/rapl', '-s', str(rapl_resolution), '-c', '0,12', '-f', rapl_output_file]
@@ -308,10 +308,10 @@ def determine_critical_power_levels(appCfg, rscCfg):
     P['cpu'][1] = read_rapl(appCfg)[1]
 
     print('\n\tDone: ' + str(P))
-    for index, e in enumerate(P['mem']):
-        print "{} - {}".format(index, P['mem'][index])
-    for index, e in enumerate(P['cpu']):
-        print "{} - {}".format(index, P['cpu'][index])
+    # for index, e in enumerate(P['mem']):
+    #     print "{} - {}".format(index, P['mem'][index])
+    # for index, e in enumerate(P['cpu']):
+    #     print "{} - {}".format(index, P['cpu'][index])
     return P
 
 
@@ -335,7 +335,7 @@ def read_rapl(appCfg):
             mem_powers.append(float(line[8]))
 
     #print mem_powers
-    print cpu_powers
+    #print cpu_powers
     #subprocess.call(['cp', rapl_filename, '../kbase/'])
     subprocess.call(['sudo', 'rm', '-f', rapl_filename])
     
