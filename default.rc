@@ -1,4 +1,0 @@
-affinity=None
-cpu_pbound=None
-mem_pbound=None
-ncores=1
