@@ -1,30 +1,6 @@
-## README ##
+## Project ##
 
-This repository contains the source code for power-bounded coordination project.
+This is the implementation of the power bound coordinator from the "Application-Aware Power Coordination
+on Power Bounded NUMA Multicore Systems" by Ge et al.
 
-
-### What is this repository for? ###
-
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
-
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+See subdirectory README's for further direction.
