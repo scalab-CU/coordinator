@@ -307,7 +307,7 @@ def determine_critical_power_levels(appCfg, rscCfg):
     make_rapl_log(appCfg, rscCfg, low_frequency, 'all')
     P['cpu'][1] = read_rapl(appCfg)[1]
 
-    print('\n\tDone: ' + str(P))
+    #print('\n\tDone: ' + str(P))
     # for index, e in enumerate(P['mem']):
     #     print "{} - {}".format(index, P['mem'][index])
     # for index, e in enumerate(P['cpu']):
@@ -359,7 +359,7 @@ def recommend_configuration(appCfg, rscCfg, powerCfg):
     if not 'critical_power_levels' in powerCfg:
         determine_critical_power_levels(appCfg, rscCfg)
     else:
-        print "Critical power levels predetermined"
+        #print "Critical power levels predetermined"
         global P
         P = powerCfg['critical_power_levels']
         

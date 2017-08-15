@@ -140,7 +140,7 @@ def ensure_power_level_files(appCfg, rscCfg):
             critical_power_levels = ct.determine_critical_power_levels(appCfg, rscCfg)
             config = {"base_power_levels" : {"cpu" : base_cpu, "mem" : base_mem}, "critical_power_levels" : critical_power_levels}
             power_config_file.write(json.dumps(config, indent=2, sort_keys=True))
-            print "Wrote json file"
+            print "Wrote power levels to knowledge base"
     else:
         with open(path, 'w+') as power_config_file:
             powers = json.loads(power_config_file.read())

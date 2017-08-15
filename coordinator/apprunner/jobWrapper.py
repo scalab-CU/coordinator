@@ -107,7 +107,7 @@ def make_pb_command(powerCfg, rscCfg, d):
         powerCfg['base_power_levels']['cpu'] = -1
         powerCfg['base_power_levels']['mem'] = -1
 
-    print d
+    #print d
     comm = rscCfg['rapl_ctl_location'] + "/mu_power_gadget "
     for i in range(len(d['cpu'])):
         watts = floor(sum(d['cpu'][i]))
@@ -126,7 +126,7 @@ def make_pb_command(powerCfg, rscCfg, d):
     return comm
 
 def make_wrapper(appCfg, rscCfg, powerCfg, a, d):
-    script = "{}.job".format(appCfg["app"])
+    script = "../{}.job".format(appCfg["app"])
     tmpl = Template("""#!/bin/bash
 
 $wms_preample

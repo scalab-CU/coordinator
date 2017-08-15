@@ -1,0 +1,8 @@
+{
+    "app": "ep",
+    "psize": "C",
+    "path": <full path to problem executable>,
+    "program_model": "omp",
+    "scalability": "high",
+    "memory_intensity": "low"
+}
